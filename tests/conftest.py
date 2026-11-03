@@ -1,29 +1,29 @@
-import os
 from collections.abc import Iterator
 
 import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import Engine, create_engine
-from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
+
+from app.core.config import settings
+
+TEST_DATABASE_NAME = "employee_management_test"
 
 
 @pytest.fixture(scope="session")
 def postgres_engine() -> Iterator[Engine]:
-    database_url = os.getenv("TEST_DATABASE_URL")
-    if not database_url:
+    if settings.database_name != TEST_DATABASE_NAME:
         pytest.fail(
-            "TEST_DATABASE_URL must point to a dedicated PostgreSQL test database."
+            "Tests require employee_management_test. Run "
+            "'docker compose run --build --rm test' to use the isolated test database."
         )
 
-    parsed_url = make_url(database_url)
-    if not parsed_url.drivername.startswith("postgresql"):
+    database_url = settings.database_url
+    if not database_url.drivername.startswith("postgresql"):
         pytest.fail("Integration tests require PostgreSQL; SQLite is not supported.")
-    if not parsed_url.database or not parsed_url.database.endswith("_test"):
-        pytest.fail("TEST_DATABASE_URL database name must end with '_test'.")
 
-    engine = create_engine(parsed_url, pool_pre_ping=True)
+    engine = create_engine(database_url, pool_pre_ping=True)
     try:
         with engine.connect() as connection:
             alembic_config = Config("alembic.ini")
