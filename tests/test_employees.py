@@ -5,9 +5,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.security import create_access_token
 from app.db.session import get_db
 from app.main import app
-from app.models import Department, Employee
+from app.models import Department, Employee, User, UserRole
 
 BASE_URL = "/api/v1/employees"
 
@@ -17,9 +18,18 @@ def employee_client(db_session: Session) -> Iterator[TestClient]:
     def override_get_db() -> Iterator[Session]:
         yield db_session
 
+    admin = User(
+        email="employee-admin@example.com",
+        hashed_password="unused-test-hash",
+        role=UserRole.ADMIN,
+        is_active=True,
+    )
+    db_session.add(admin)
+    db_session.flush()
     app.dependency_overrides[get_db] = override_get_db
     try:
         with TestClient(app) as client:
+            client.headers["Authorization"] = f"Bearer {create_access_token(admin.id)}"
             yield client
     finally:
         app.dependency_overrides.pop(get_db, None)

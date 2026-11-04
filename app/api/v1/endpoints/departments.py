@@ -1,9 +1,9 @@
 from typing import Annotated, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.api.v1.dependencies import DbSession, require_roles
+from app.models import User, UserRole
 from app.schemas.department import (
     DepartmentCreate,
     DepartmentPage,
@@ -13,7 +13,7 @@ from app.schemas.department import (
 from app.services import departments as department_service
 
 router = APIRouter(prefix="/api/v1/departments")
-DbSession = Annotated[Session, Depends(get_db)]
+AdminUser = Annotated[User, Depends(require_roles(UserRole.ADMIN))]
 
 
 def _raise_http_error(error: Exception) -> NoReturn:
@@ -43,6 +43,7 @@ def _raise_http_error(error: Exception) -> NoReturn:
 def create_department(
     department_in: DepartmentCreate,
     db: DbSession,
+    _current_user: AdminUser,
 ) -> DepartmentRead:
     try:
         return department_service.create_department(db, department_in)
@@ -53,6 +54,7 @@ def create_department(
 @router.get("", response_model=DepartmentPage)
 def list_departments(
     db: DbSession,
+    _current_user: AdminUser,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> DepartmentPage:
@@ -73,6 +75,7 @@ def list_departments(
 def get_department(
     department_id: int,
     db: DbSession,
+    _current_user: AdminUser,
 ) -> DepartmentRead:
     try:
         return department_service.get_department(db, department_id)
@@ -85,6 +88,7 @@ def update_department(
     department_id: int,
     department_in: DepartmentUpdate,
     db: DbSession,
+    _current_user: AdminUser,
 ) -> DepartmentRead:
     try:
         return department_service.update_department(db, department_id, department_in)
@@ -96,7 +100,11 @@ def update_department(
 
 
 @router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_department(department_id: int, db: DbSession) -> Response:
+def delete_department(
+    department_id: int,
+    db: DbSession,
+    _current_user: AdminUser,
+) -> Response:
     try:
         department_service.delete_department(db, department_id)
     except (

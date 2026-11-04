@@ -1,9 +1,9 @@
 from typing import Annotated, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from app.api.v1.dependencies import DbSession, get_current_user, require_roles
+from app.models import User, UserRole
 from app.schemas.employee import (
     EmployeeCreate,
     EmployeePage,
@@ -13,7 +13,12 @@ from app.schemas.employee import (
 from app.services import employees as employee_service
 
 router = APIRouter(prefix="/api/v1/employees")
-DbSession = Annotated[Session, Depends(get_db)]
+AdminUser = Annotated[User, Depends(require_roles(UserRole.ADMIN))]
+AdminOrManagerUser = Annotated[
+    User,
+    Depends(require_roles(UserRole.ADMIN, UserRole.MANAGER)),
+]
+CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
 def _raise_http_error(error: Exception) -> NoReturn:
@@ -48,6 +53,7 @@ def _raise_http_error(error: Exception) -> NoReturn:
 def create_employee(
     employee_in: EmployeeCreate,
     db: DbSession,
+    _current_user: AdminUser,
 ) -> EmployeeRead:
     try:
         return employee_service.create_employee(db, employee_in)
@@ -61,6 +67,7 @@ def create_employee(
 @router.get("", response_model=EmployeePage)
 def list_employees(
     db: DbSession,
+    _current_user: AdminOrManagerUser,
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     department_id: Annotated[int | None, Query(gt=0)] = None,
@@ -83,7 +90,16 @@ def list_employees(
 def get_employee(
     employee_id: int,
     db: DbSession,
+    current_user: CurrentUser,
 ) -> EmployeeRead:
+    if (
+        current_user.role is UserRole.EMPLOYEE
+        and current_user.employee_id != employee_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employees may only access their own profile",
+        )
     try:
         return employee_service.get_employee(db, employee_id)
     except employee_service.EmployeeNotFoundError as error:
@@ -95,6 +111,7 @@ def update_employee(
     employee_id: int,
     employee_in: EmployeeUpdate,
     db: DbSession,
+    _current_user: AdminOrManagerUser,
 ) -> EmployeeRead:
     try:
         return employee_service.update_employee(db, employee_id, employee_in)
@@ -107,7 +124,11 @@ def update_employee(
 
 
 @router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_employee(employee_id: int, db: DbSession) -> Response:
+def delete_employee(
+    employee_id: int,
+    db: DbSession,
+    _current_user: AdminUser,
+) -> Response:
     try:
         employee_service.delete_employee(db, employee_id)
     except (
