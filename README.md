@@ -41,3 +41,14 @@ docker compose exec api python -m app.cli create-admin
 The bootstrap command refuses to create an admin if any user already exists.
 Login accepts JSON credentials at `POST /api/v1/auth/login`; the returned
 `access_token` can be entered in the Swagger UI Authorize dialog.
+
+## GitHub Actions
+
+The CI workflow runs on every pull request and every push to `main`. It checks
+Ruff linting and formatting, then runs the full PostgreSQL integration suite
+against a dedicated `employee_management_test` service database. The test
+fixtures apply Alembic migrations before the tests start.
+
+To inspect a run, open the repository on GitHub and select **Actions**. Choose
+the **CI** workflow and open a run to see its job status and step logs. A
+failed Ruff check, migration, or test run marks the workflow as failed.
