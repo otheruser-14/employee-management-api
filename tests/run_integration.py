@@ -1,5 +1,11 @@
+import os
+import secrets
+
 import pytest
 from sqlalchemy import create_engine, text
+
+if not os.environ.get("JWT_SECRET"):
+    os.environ["JWT_SECRET"] = secrets.token_urlsafe(48)
 
 from app.core.config import settings
 
