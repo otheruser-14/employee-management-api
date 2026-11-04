@@ -248,3 +248,13 @@ Potential next steps for the project include:
 - Add audit logging for changes to employee and department records.
 - Define a token revocation or refresh-token strategy.
 - Add deployment automation and operational monitoring.
+## Project Screenshots
+
+### Authentication and API Health
+![Authentication and Health Checks](docs/images/swagger-auth.png)
+
+### Employee and Department Management
+![CRUD Endpoints](docs/images/swagger-crud.png)
+
+### GitHub Actions CI/CD
+![CI/CD Pipeline](docs/images/github-actions.png)
