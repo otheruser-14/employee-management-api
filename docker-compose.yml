@@ -9,6 +9,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in your environment or .env file}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in your environment or .env file}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment or .env file}
+      JWT_SECRET: ${JWT_SECRET:-}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
     depends_on:
       db:
         condition: service_healthy

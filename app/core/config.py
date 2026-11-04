@@ -2,6 +2,8 @@ from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
 
+JWT_ALGORITHM = "HS256"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -20,6 +22,13 @@ class Settings(BaseSettings):
     database_password: SecretStr = Field(
         default=SecretStr(""),
         validation_alias="POSTGRES_PASSWORD",
+    )
+    jwt_secret: SecretStr = Field(validation_alias="JWT_SECRET", min_length=32)
+    access_token_expire_minutes: int = Field(
+        default=15,
+        validation_alias="ACCESS_TOKEN_EXPIRE_MINUTES",
+        ge=1,
+        le=1440,
     )
 
     @property
