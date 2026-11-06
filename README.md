@@ -118,7 +118,7 @@ administrator is created with the bootstrap command shown below.
 Clone the repository and move into its directory:
 
 ```bash
-git clone https://github.com/otheruser-14/employee-management-api.git
+git clone https://github.com/Charkifatima/employee-management-api.git
 cd employee-management-api
 ```
 
